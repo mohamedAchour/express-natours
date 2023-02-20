@@ -7,14 +7,6 @@ const app = express();
 //this will add data to tye body of request object
 app.use(express.json());
 
-// app.get('/', (req, res) => {
-//   res.status(200).json({ message: 'Hello from the server !', app: 'Natours' });
-// });
-
-// app.post('/', (req, res) => {
-//   res.status(200).json({ message: 'created' });
-// });
-
 //read the data
 const tours = JSON.parse(
   fs.readFileSync(`${__dirname}/dev-data/data/tours-simple.json`, 'utf-8')
@@ -27,6 +19,19 @@ app.get('/api/v1/tours', (req, res) => {
     status: 'success',
     results: tours.length,
     data: { tours },
+  });
+});
+
+app.get('/api/v1/tours/:id', (req, res) => {
+  //Send data in jsend format
+  const id = Number(req.params.id);
+  const tour = tours.find((tour) => tour.id === id);
+
+  if (!tour)
+    return res.status(404).json({ status: 'fail', message: 'Invalid ID' });
+  res.status(200).json({
+    status: 'success',
+    data: { tour },
   });
 });
 
