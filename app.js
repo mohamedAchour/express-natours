@@ -5,9 +5,13 @@ const morgan = require('morgan');
 
 const app = express();
 
+//###########MIDDLEWARES###########
+
 //json middleware
 //this will add data to the body of request object
 app.use(express.json());
+
+//morgan
 app.use(morgan('dev'));
 
 app.use((req, res, next) => {
@@ -15,14 +19,17 @@ app.use((req, res, next) => {
   next();
 });
 
+//###########CONSTS###########
+
 const API_PATH = '/api/v1';
 //read the data
 const tours = JSON.parse(
   fs.readFileSync(`${__dirname}/dev-data/data/tours-simple.json`, 'utf-8')
 );
 
-//Request handelers
+//#########ROUTES HNADLERS : CONTROLLERS###########
 
+//Tours
 const getTours = (req, res) => {
   //Send data in jsend format
   res.status(200).json({
@@ -91,14 +98,59 @@ const deleteTour = (req, res) => {
   });
 };
 
-app.route(`${API_PATH}/tours`).get(getTours).post(createTour);
+//Users
 
-app
-  .route(`${API_PATH}/tours/:id`)
-  .get(getTour)
-  .patch(updateTour)
-  .delete(deleteTour);
+const getUsers = (req, res) => {
+  res.status(500).json({
+    status: 'error',
+    message: 'not yet implemented',
+  });
+};
 
+const getUser = (req, res) => {
+  res.status(500).json({
+    status: 'error',
+    message: 'not yet implemented',
+  });
+};
+
+const createUser = (req, res) => {
+  res.status(500).json({
+    status: 'error',
+    message: 'not yet implemented',
+  });
+};
+
+const updateUser = (req, res) => {
+  res.status(500).json({
+    status: 'error',
+    message: 'not yet implemented',
+  });
+};
+
+const deleteUser = (req, res) => {
+  res.status(500).json({
+    status: 'error',
+    message: 'not yet implemented',
+  });
+};
+
+//#########ROUTES###########
+
+const tourRouter = express.Router();
+const userRouter = express.Router();
+
+//mounting routers on the application
+app.use(`${API_PATH}/tours`, tourRouter);
+app.use(`${API_PATH}/users`, userRouter);
+
+tourRouter.route('/').get(getTours).post(createTour);
+tourRouter.route('/:id').get(getTour).patch(updateTour).delete(deleteTour);
+
+userRouter.route(`/`).get(getUsers).post(createUser);
+userRouter.route('/:id').get(getUser).patch(updateUser).delete(deleteUser);
+
+//###########START THE SERVER###########
 const port = 3000;
 app.listen(port, () => {
   console.log(`App running on port ${port}`);
