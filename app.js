@@ -13,17 +13,18 @@ const tours = JSON.parse(
   fs.readFileSync(`${__dirname}/dev-data/data/tours-simple.json`, 'utf-8')
 );
 
-//GET
-app.get(`${API_PATH}/tours`, (req, res) => {
+//Request handelers
+
+const getTours = (req, res) => {
   //Send data in jsend format
   res.status(200).json({
     status: 'success',
     results: tours.length,
     data: { tours },
   });
-});
+};
 
-app.get(`${API_PATH}/tours/:id`, (req, res) => {
+const getTour = (req, res) => {
   //Send data in jsend format
   const id = Number(req.params.id);
   const tour = tours.find((tour) => tour.id === id);
@@ -34,11 +35,9 @@ app.get(`${API_PATH}/tours/:id`, (req, res) => {
     status: 'success',
     data: { tour },
   });
-});
+};
 
-//POST
-//Note that express doesn't put request body data in the request,so to have access to that data, we have to use a middleware
-app.post(`${API_PATH}/tours`, (req, res) => {
+const createTour = (req, res) => {
   const newId = tours[tours.length - 1].id + 1;
   const newTour = { id: newId, ...req.body };
   tours.push(newTour);
@@ -54,10 +53,9 @@ app.post(`${API_PATH}/tours`, (req, res) => {
       });
     }
   );
-});
+};
 
-//PATCH
-app.patch(`${API_PATH}/tours/:id`, (req, res) => {
+const updateTour = (req, res) => {
   const id = Number(req.params.id);
   const index = tours.indexOf(tours.find((tour) => tour.id === id));
   if (index < 0)
@@ -70,10 +68,9 @@ app.patch(`${API_PATH}/tours/:id`, (req, res) => {
     }
   }
   res.status(200).json({ status: 'success', data: { tour: tours[index] } });
-});
+};
 
-//DELETE
-app.delete(`${API_PATH}/tours/:id`, (req, res) => {
+const deleteTour = (req, res) => {
   const id = Number(req.params.id);
   const index = tours.indexOf(tours.find((tour) => tour.id === id));
   if (index < 0)
@@ -83,7 +80,15 @@ app.delete(`${API_PATH}/tours/:id`, (req, res) => {
     status: 'success',
     data: null, // to show that the resources we delete no longer exists
   });
-});
+};
+
+app.route(`${API_PATH}/tours`).get(getTours).post(createTour);
+
+app
+  .route(`${API_PATH}/tours/:id`)
+  .get(getTour)
+  .patch(updateTour)
+  .delete(deleteTour);
 
 const port = 3000;
 app.listen(port, () => {
