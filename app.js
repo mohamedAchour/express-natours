@@ -1,11 +1,19 @@
 const fs = require('fs');
+
 const express = require('express');
+const morgan = require('morgan');
 
 const app = express();
 
-//use a middleware
-//this will add data to tye body of request object
+//json middleware
+//this will add data to the body of request object
 app.use(express.json());
+app.use(morgan('dev'));
+
+app.use((req, res, next) => {
+  req.requestTime = new Date().toISOString();
+  next();
+});
 
 const API_PATH = '/api/v1';
 //read the data
@@ -19,6 +27,7 @@ const getTours = (req, res) => {
   //Send data in jsend format
   res.status(200).json({
     status: 'success',
+    requestedAt: req.requestTime,
     results: tours.length,
     data: { tours },
   });
