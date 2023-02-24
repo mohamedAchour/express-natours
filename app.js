@@ -12,9 +12,10 @@ const app = express();
 //this will add data to the body of request object
 app.use(express.json());
 
-//morgan
+//morgan: formating logs
 app.use(morgan('dev'));
 
+//custom middleware
 app.use((req, res, next) => {
   req.requestTime = new Date().toISOString();
   next();
@@ -24,7 +25,7 @@ app.use((req, res, next) => {
 
 const API_PATH = '/api/v1';
 
-//###########MOUNTING ROUTES###########
+//###########MOUNTING ROUTES (middleware) ON APP###########
 app.use(`${API_PATH}/tours`, tourRouter);
 app.use(`${API_PATH}/users`, userRouter);
 

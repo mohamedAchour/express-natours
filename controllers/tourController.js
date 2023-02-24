@@ -5,6 +5,19 @@ const tours = JSON.parse(
   fs.readFileSync(`${__dirname}/../dev-data/data/tours-simple.json`, 'utf-8')
 );
 
+//custom middlewares
+exports.checkBody = (req, res, next) => {
+  const body = req.body;
+
+  if (!body.price || !body.name) {
+    return res
+      .status(400)
+      .json({ status: 'fail', message: 'Missing name or price' });
+  }
+
+  next();
+};
+
 exports.checkID = (req, res, next, id) => {
   const tour = tours.find((tour) => tour.id === Number(id));
 
@@ -14,6 +27,7 @@ exports.checkID = (req, res, next, id) => {
   next();
 };
 
+//request handlers
 exports.getTours = (req, res) => {
   //Send data in jsend format
   res.status(200).json({
