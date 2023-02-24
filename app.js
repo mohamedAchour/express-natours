@@ -13,7 +13,7 @@ const app = express();
 app.use(express.json());
 
 //morgan: formating logs
-app.use(morgan('dev'));
+process.env.NODE_ENV === 'development' && app.use(morgan('dev'));
 
 //custom middleware
 app.use((req, res, next) => {
@@ -21,9 +21,11 @@ app.use((req, res, next) => {
   next();
 });
 
+//
+app.use(express.static(`${__dirname}/public`));
 //###########CONSTS###########
 
-const API_PATH = '/api/v1';
+const API_PATH = process.env.API_PATH;
 
 //###########MOUNTING ROUTES (middleware) ON APP###########
 app.use(`${API_PATH}/tours`, tourRouter);
