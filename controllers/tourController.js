@@ -7,7 +7,7 @@ const tours = JSON.parse(
 
 //custom middlewares
 exports.checkBody = (req, res, next) => {
-  const body = req.body;
+  const { body } = req;
 
   if (!body.price || !body.name) {
     return res
@@ -19,7 +19,7 @@ exports.checkBody = (req, res, next) => {
 };
 
 exports.checkID = (req, res, next, id) => {
-  const tour = tours.find((tour) => tour.id === Number(id));
+  const tour = tours.find((currentTour) => currentTour.id === Number(id));
 
   if (!tour)
     return res.status(404).json({ status: 'fail', message: 'Invalid ID' });
@@ -41,7 +41,7 @@ exports.getTours = (req, res) => {
 exports.getTour = (req, res) => {
   //Send data in jsend format
   const id = Number(req.params.id);
-  const tour = tours.find((tour) => tour.id === id);
+  const tour = tours.find((currentTour) => currentTour.id === id);
 
   res.status(200).json({
     status: 'success',
@@ -51,13 +51,13 @@ exports.getTour = (req, res) => {
 
 exports.createTour = (req, res) => {
   const newId = tours[tours.length - 1].id + 1;
-  const newTour = { id: newId, ...req.body };
+  const newTour = Object.assign(req.body, { id: newId });
   tours.push(newTour);
 
   fs.writeFile(
     `${__dirname}/dev-data/data/tours-simple.json`,
     JSON.stringify(tours),
-    (err) => {
+    () => {
       //201 : for created
       res.status(201).json({
         status: 'success',
@@ -70,19 +70,18 @@ exports.createTour = (req, res) => {
 exports.updateTour = (req, res) => {
   const id = Number(req.params.id);
   const index = tours.indexOf(tours.find((tour) => tour.id === id));
-  const data = req.body;
+  const { body } = req;
 
-  for (const key in data) {
+  Object.entries(body).forEach(([key, value]) => {
     if (key in tours[index]) {
-      tours[index][key] = data[key];
+      tours[index][key] = value;
     }
-  }
+  });
+
   res.status(200).json({ status: 'success', data: { tour: tours[index] } });
 };
 
 exports.deleteTour = (req, res) => {
-  const id = Number(req.params.id);
-  const index = tours.indexOf(tours.find((tour) => tour.id === id));
   //delete logic
   res.status(204).json({
     status: 'success',

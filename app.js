@@ -13,7 +13,9 @@ const app = express();
 app.use(express.json());
 
 //morgan: formating logs
-process.env.NODE_ENV === 'development' && app.use(morgan('dev'));
+if (process.env.NODE_ENV === 'development') {
+  app.use(morgan('dev'));
+}
 
 //custom middleware
 app.use((req, res, next) => {
@@ -25,7 +27,7 @@ app.use((req, res, next) => {
 app.use(express.static(`${__dirname}/public`));
 //###########CONSTS###########
 
-const API_PATH = process.env.API_PATH;
+const { API_PATH } = process.env;
 
 //###########MOUNTING ROUTES (middleware) ON APP###########
 app.use(`${API_PATH}/tours`, tourRouter);
