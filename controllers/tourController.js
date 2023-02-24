@@ -6,7 +6,7 @@ const tours = JSON.parse(
 );
 
 exports.checkID = (req, res, next, id) => {
-  const tour = tours.find((tour) => tour.id === id);
+  const tour = tours.find((tour) => tour.id === Number(id));
 
   if (!tour)
     return res.status(404).json({ status: 'fail', message: 'Invalid ID' });
