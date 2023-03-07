@@ -18,10 +18,10 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 //custom middleware
-app.use((req, res, next) => {
-  req.requestTime = new Date().toISOString();
-  next();
-});
+// app.use((req, res, next) => {
+//   req.requestTime = new Date().toISOString();
+//   next();
+// });
 
 //
 app.use(express.static(`${__dirname}/public`));
