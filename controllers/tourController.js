@@ -2,8 +2,54 @@ const Tour = require('../models/tour');
 
 exports.getTours = async (req, res) => {
   try {
-    const tours = await Tour.find({});
+    //BUILD QUERY
 
+    const { query: queryStr } = req;
+    const queryStrKeys = Object.keys(queryStr);
+
+    // 1 - Filtering
+    const allowedQueryFields = Object.keys(Tour.schema.obj);
+    const queryObj = {};
+
+    queryStrKeys
+      .filter((field) => allowedQueryFields.includes(field))
+      .forEach((field) => {
+        const newObj = JSON.parse(
+          JSON.stringify(queryStr[field]).replace(
+            /\b(gt|gte|lt|lte)\b/g,
+            (match) => `$${match}`
+          )
+        );
+        queryObj[field] = newObj;
+      });
+
+    // 2 - Sorting
+    //by default : sort by creation date
+    let sortBy = '-createdAt';
+    if (queryStr.sort) {
+      sortBy = queryStr.sort.split(',').join(' ');
+    }
+
+    // 3 - limit
+    let limit = '';
+    if (queryStr.limit) {
+      ({ limit } = queryStr);
+    }
+
+    // 4 - field limiting : projecting
+    let fields = '-__v';
+    if (queryStr.field) {
+      fields = queryStr.field.split(',').join(' ');
+    }
+
+    //we have first to define the query and after that wait, this way we can chain other queries, other wise we will
+    //the first query will be executed and it will be impossible to chain other queries
+    const query = Tour.find(queryObj).sort(sortBy).limit(limit).select(fields);
+
+    //EXECUTE QUERY
+    const tours = await query;
+
+    //SEND RESPONSE
     res.status(200).json({
       status: 'success',
       results: tours.length,
