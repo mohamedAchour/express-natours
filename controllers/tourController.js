@@ -1,3 +1,4 @@
+const { sendSuccess, sendError } = require('../utils/helpers/responses');
 const Tour = require('../models/tour');
 
 exports.aliasTopTours = (req, res, next) => {
@@ -6,22 +7,22 @@ exports.aliasTopTours = (req, res, next) => {
   next();
 };
 
-exports.getTours = async (req, res) => {
-  try {
-    //BUILD QUERY
+class APIFeatures {
+  constructor(query, queryString, allowedQueryFields) {
+    this.query = query;
+    this.queryString = queryString;
+    this.allowedQueryFields = allowedQueryFields;
+  }
 
-    const { query: queryStr } = req;
-    const queryStrKeys = Object.keys(queryStr);
-
-    // 1 - Filtering
-    const allowedQueryFields = Object.keys(Tour.schema.obj);
+  filter() {
+    const queryStrKeys = Object.keys(this.queryString);
     const queryObj = {};
 
     queryStrKeys
-      .filter((field) => allowedQueryFields.includes(field))
+      .filter((field) => this.allowedQueryFields.includes(field))
       .forEach((field) => {
         const newObj = JSON.parse(
-          JSON.stringify(queryStr[field]).replace(
+          JSON.stringify(this.queryString[field]).replace(
             /\b(gt|gte|lt|lte)\b/g,
             (match) => `$${match}`
           )
@@ -29,54 +30,68 @@ exports.getTours = async (req, res) => {
         queryObj[field] = newObj;
       });
 
-    let query = Tour.find(queryObj);
-    // 2 - Sorting
+    this.query = this.query.find(queryObj);
+
+    return this;
+  }
+
+  sort() {
     //by default : sort by creation date
     let sortBy = '-createdAt';
-    if (queryStr.sort) {
-      sortBy = queryStr.sort.split(',').join(' ');
-      query = query.sort(sortBy);
+    if (this.queryString.sort) {
+      sortBy = this.queryString.sort.split(',').join(' ');
+      this.query = this.query.sort(sortBy);
     }
 
-    // 3 - field limiting : projecting
+    return this;
+  }
+
+  project() {
     let fields = '-__v';
-    if (queryStr.field) {
-      fields = queryStr.field.split(',').join(' ');
+    if (this.queryString.field) {
+      fields = this.queryString.field.split(',').join(' ');
     } else {
       fields = '-__v';
     }
 
-    query = query.select(fields);
+    this.query = this.query.select(fields);
 
-    // 4 - pagination
-    const page = queryStr.page * 1 || 1;
-    const limit = queryStr.limit * 1 || 100;
+    return this;
+  }
+
+  paginate() {
+    const page = this.queryString.page * 1 || 1;
+    const limit = this.queryString.limit * 1 || 100;
     const skip = (page - 1) * limit;
+    if (page > 0) this.query = this.query.skip(skip).limit(limit);
 
-    if (page > 0) query = query.skip(skip).limit(limit);
+    return this;
+  }
+}
 
-    // throw an error if requested page doesn't exist
-    if (queryStr.page) {
-      const nbTours = await Tour.countDocuments();
-      if (skip >= nbTours) throw new Error(`Requested page doesn't exist!`);
-    }
+exports.getTours = async (req, res) => {
+  try {
+    //get the query string
+    const { query: queryStr } = req;
 
     //EXECUTE QUERY
-    const tours = await query;
+    const features = new APIFeatures(
+      Tour.find(),
+      queryStr,
+      Object.keys(Tour.schema.obj)
+    )
+      .filter()
+      .sort()
+      .project()
+      .paginate();
+    const tours = await features.query;
 
     if (tours.length <= 0) throw new Error(`Sorry, no results found!`);
 
     //SEND RESPONSE
-    res.status(200).json({
-      status: 'success',
-      results: tours.length,
-      data: { tours },
-    });
+    sendSuccess(res, { code: 200, title: 'tours' }, tours, tours.length);
   } catch (err) {
-    res.status(404).json({
-      status: 'fail',
-      message: err.message,
-    });
+    sendError(res, { code: 404, message: err.message });
   }
 };
 
@@ -85,15 +100,9 @@ exports.getTour = async (req, res) => {
     const { id } = req.params;
     const tour = await Tour.findById(id);
 
-    res.status(200).json({
-      status: 'success',
-      data: { tour },
-    });
+    sendSuccess(res, { code: 200, title: 'tour' }, tour);
   } catch (err) {
-    res.status(404).json({
-      status: 'fail',
-      message: err.message,
-    });
+    sendError(res, { code: 404, message: err.message });
   }
 };
 
@@ -103,15 +112,9 @@ exports.createTour = async (req, res) => {
   try {
     const newTour = await Tour.create(body);
     //201 : for created
-    res.status(201).json({
-      status: 'success',
-      data: newTour,
-    });
+    sendSuccess(res, { code: 201, title: 'tour' }, newTour);
   } catch (err) {
-    res.status(400).json({
-      status: 'fail',
-      message: err.message,
-    });
+    sendError(res, { code: 400, message: err.message });
   }
 };
 
@@ -122,9 +125,9 @@ exports.updateTour = async (req, res) => {
     const options = { new: true, runValidators: true };
     const updatedTour = await Tour.findByIdAndUpdate(id, update, options);
 
-    res.status(200).json({ status: 'success', data: { tour: updatedTour } });
+    sendSuccess(res, { code: 200, title: 'tour' }, updatedTour);
   } catch (err) {
-    res.status(404).json({ status: 'fail', message: err });
+    sendError(res, { code: 404, message: err.message });
   }
 };
 
@@ -133,8 +136,8 @@ exports.deleteTour = async (req, res) => {
     const { id } = req.params;
 
     await Tour.findByIdAndDelete(id);
-    res.status(204).json({ status: 'success', data: null });
+    sendSuccess(res, { code: 204, title: 'tour' });
   } catch (err) {
-    res.status(404).json({ status: 'fail', message: err.message });
+    sendError(res, { code: 404, message: err.message });
   }
 };
