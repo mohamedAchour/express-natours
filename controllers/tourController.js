@@ -23,31 +23,42 @@ exports.getTours = async (req, res) => {
         queryObj[field] = newObj;
       });
 
+    let query = Tour.find(queryObj);
     // 2 - Sorting
     //by default : sort by creation date
     let sortBy = '-createdAt';
     if (queryStr.sort) {
       sortBy = queryStr.sort.split(',').join(' ');
+      query = query.sort(sortBy);
     }
 
-    // 3 - limit
-    let limit = '';
-    if (queryStr.limit) {
-      ({ limit } = queryStr);
-    }
-
-    // 4 - field limiting : projecting
+    // 3 - field limiting : projecting
     let fields = '-__v';
     if (queryStr.field) {
       fields = queryStr.field.split(',').join(' ');
+    } else {
+      fields = '-__v';
     }
 
-    //we have first to define the query and after that wait, this way we can chain other queries, other wise we will
-    //the first query will be executed and it will be impossible to chain other queries
-    const query = Tour.find(queryObj).sort(sortBy).limit(limit).select(fields);
+    query = query.select(fields);
+
+    // 4 - pagination
+    const page = queryStr.page * 1 || 1;
+    const limit = queryStr.limit * 1 || 100;
+    const skip = (page - 1) * limit;
+
+    if (page > 0) query = query.skip(skip).limit(limit);
+
+    // throw an error if requested page doesn't exist
+    if (queryStr.page) {
+      const nbTours = await Tour.countDocuments();
+      if (skip >= nbTours) throw new Error(`Requested page doesn't exist!`);
+    }
 
     //EXECUTE QUERY
     const tours = await query;
+
+    if (tours.length <= 0) throw new Error(`Sorry, no results found!`);
 
     //SEND RESPONSE
     res.status(200).json({
