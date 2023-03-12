@@ -77,3 +77,27 @@ exports.deleteTour = async (req, res) => {
     sendError(res, { code: 404, message: err.message });
   }
 };
+
+exports.getTourStats = async (req, res) => {
+  try {
+    const stats = await Tour.aggregate([
+      { $match: { ratingsAverage: { $gte: 4.5 } } },
+      {
+        $group: {
+          _id: '$difficulty',
+          numTours: { $sum: 1 },
+          numRatings: { $sum: '$ratingsQuantity' },
+          avgRatings: { $avg: '$ratingsAverage' },
+          avgPrice: { $avg: '$price' },
+          minPrice: { $min: '$price' },
+          maxPrice: { $max: '$price' },
+        },
+      },
+      { $sort: { numTours: -1 } },
+    ]);
+
+    sendSuccess(res, { code: 200, title: 'stats' }, stats);
+  } catch (err) {
+    sendError(res, { code: 404, message: err.message });
+  }
+};
