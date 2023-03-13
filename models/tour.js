@@ -29,7 +29,7 @@ const tourSchema = new mongoose.Schema(
     summary: {
       type: String,
       trim: true,
-      required: [true, ' tour must have a description'],
+      required: [true, 'A tour must have a description'],
     },
     description: {
       type: String,
@@ -43,18 +43,16 @@ const tourSchema = new mongoose.Schema(
 
     images: [String],
     startDates: [Date],
-    createdAt: {
-      type: Date,
-      select: false,
-      default: Date.now,
-    },
-    updatedAt: {
-      type: Date,
-      select: false,
-    },
   },
   { timestamps: true }
 );
+
+tourSchema.virtual('durationWeeks').get(function () {
+  return this.duration / 7;
+});
+
+tourSchema.set('toObject', { virtuals: true });
+tourSchema.set('toJSON', { virtuals: true });
 
 const Tour = mongoose.model('Tour', tourSchema);
 
