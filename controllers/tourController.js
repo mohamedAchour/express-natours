@@ -93,10 +93,47 @@ exports.getTourStats = async (req, res) => {
           maxPrice: { $max: '$price' },
         },
       },
-      { $sort: { numTours: -1 } },
+      { $sort: { numTours: 1 } },
     ]);
 
     sendSuccess(res, { code: 200, title: 'stats' }, stats);
+  } catch (err) {
+    sendError(res, { code: 404, message: err.message });
+  }
+};
+
+//The busiest months of a given year: how many tours start in each given month of the year
+exports.getMonthlyPlan = async (req, res) => {
+  try {
+    const inputYear = req.params.year * 1;
+    const limit = req.query.limit * 1 || 12;
+
+    const plan = await Tour.aggregate([
+      { $unwind: { path: '$startDates' } },
+      {
+        $project: {
+          _id: 1,
+          name: 1,
+          year: { $year: '$startDates' },
+          month: { $month: '$startDates' },
+        },
+      },
+      { $match: { year: { $eq: inputYear } } },
+      {
+        $group: {
+          _id: {
+            year: '$year',
+            month: '$month',
+          },
+          numTours: { $sum: 1 },
+          tours: { $push: { name: '$name', _id: '$_id' } },
+        },
+      },
+      { $sort: { numTours: -1 } },
+      { $limit: limit },
+    ]);
+
+    sendSuccess(res, { code: 200, title: 'plan' }, plan);
   } catch (err) {
     sendError(res, { code: 404, message: err.message });
   }
