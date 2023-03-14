@@ -46,6 +46,10 @@ const tourSchema = new mongoose.Schema(
     images: [String],
     startDates: [Date],
     // slug: { type: String },
+    secretTour: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
@@ -59,21 +63,26 @@ tourSchema.set('toJSON', { virtuals: true });
 
 //DOCUMENT MIDDLEWARE
 //PRE: runs before .save() and .create()
-tourSchema.pre('save', function (next) {
-  console.log(
-    '################"Hello From inside the middleware#################'
-  );
-  this.slug = slugify(this.name, { lower: true });
-  next();
-});
+// tourSchema.pre('save', function (next) {
+//   console.log(
+//     '################"Hello From inside the middleware#################'
+//   );
+//   this.slug = slugify(this.name, { lower: true });
+//   next();
+// });
 
 //POST: runs after all pre middlewares have finished executing
-tourSchema.post('save', (doc, next) => {
-  console.log('Document saved successfuly');
-  console.log(doc);
-  next();
-});
+// tourSchema.post('save', (doc, next) => {
+//   console.log('Document saved successfuly');
+//   console.log(doc);
+//   next();
+// });
 
+// QUERY MIDDLEWARE: this point to the current query
+// tourSchema.pre('find', function (next) {
+//   this.find({ secretTour: { $ne: true } });
+//   next();
+// });
 const Tour = mongoose.model('Tour', tourSchema);
 
 module.exports = Tour;
